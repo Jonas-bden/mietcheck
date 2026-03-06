@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ 'Bearbeiten' if idx is not none else 'Neue Wohnung' }} — MietCheck</title>
+    <style>
+        :root {
+            --bg: #0a0f1a; --surface: #111827; --surface2: #1a2332;
+            --border: #1e293b; --text: #e2e8f0; --text-muted: #94a3b8;
+            --accent: #38bd9c; --accent-dim: rgba(56,189,156,0.15);
+            --purple: #a855f7; --purple-dim: rgba(168,85,247,0.15);
+            --radius: 16px; --radius-sm: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+        .container { max-width: 750px; margin: 0 auto; padding: 32px 40px; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); text-decoration: none; font-size: 14px; margin-bottom: 24px; }
+        .back-link:hover { color: var(--accent); }
+        h1 { font-size: 24px; font-weight: 700; margin-bottom: 28px; }
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 28px; margin-bottom: 20px; }
+        .card-advisor { border-color: rgba(168,85,247,0.3); }
+        .card-advisor::before { content: ''; display: block; height: 2px; background: linear-gradient(90deg, var(--accent), var(--purple)); border-radius: 2px; margin: -28px -28px 20px -28px; border-radius: var(--radius) var(--radius) 0 0; }
+        .section-label { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 16px; text-transform: uppercase; letter-spacing: 0.5px; }
+        .section-label.purple { color: var(--purple); }
+        .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-row-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+        .form-group { margin-bottom: 16px; }
+        label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+        input, textarea, select {
+            width: 100%; padding: 10px 14px; border-radius: 8px;
+            border: 1px solid var(--border); background: var(--surface2);
+            color: var(--text); font-size: 14px; font-family: inherit;
+            appearance: none; -webkit-appearance: none;
+        }
+        select { background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath d='M3 5l3 3 3-3' stroke='%2394a3b8' fill='none' stroke-width='1.5'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 12px center; padding-right: 32px; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+        textarea { resize: vertical; min-height: 70px; }
+        .hint { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 24px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; border: none; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: var(--accent); color: #0a0f1a; width: 100%; }
+        .btn-primary:hover { filter: brightness(1.1); }
+
+        .features-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+        .feature-tag { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: var(--surface2); border: 1px solid var(--border); border-radius: 8px; cursor: pointer; font-size: 13px; transition: all 0.15s; }
+        .feature-tag:has(input:checked) { border-color: var(--accent); background: var(--accent-dim); }
+        .feature-tag input { display: none; }
+        .feature-check { width: 16px; height: 16px; border: 2px solid var(--border); border-radius: 4px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+        .feature-tag:has(input:checked) .feature-check { border-color: var(--accent); background: var(--accent); }
+        .feature-tag:has(input:checked) .feature-check::after { content: '✓'; color: #0a0f1a; font-size: 11px; font-weight: 700; }
+    </style>
+</head>
+<body>
+<div class="container">
+    {% if idx is not none %}
+    <a href="{{ url_for('unit_detail', idx=idx) }}" class="back-link">← Zurück</a>
+    {% else %}
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard</a>
+    {% endif %}
+
+    <h1>{{ 'Wohnung bearbeiten' if idx is not none else 'Neue Wohnung hinzufügen' }}</h1>
+
+    <form method="POST">
+        <!-- Objekt -->
+        <div class="card">
+            <div class="section-label">Objekt</div>
+            <div class="form-group">
+                <label>Adresse / Bezeichnung</label>
+                <input type="text" name="address" value="{{ unit.get('address','') }}" placeholder="z.B. 28209 Bremen, Parkstr. 81 - MW5" required>
+            </div>
+            <div class="form-row-3">
+                <div class="form-group">
+                    <label>Baujahr</label>
+                    <input type="text" name="year" value="{{ unit.get('year','') }}" placeholder="z.B. 1992">
+                </div>
+                <div class="form-group">
+                    <label>Letzte Sanierung</label>
+                    <input type="text" name="renovation_year" value="{{ unit.get('renovation_year','') }}" placeholder="z.B. 2018">
+                </div>
+                <div class="form-group">
+                    <label>Wohnfläche (m²)</label>
+                    <input type="number" step="0.01" name="sqm" value="{{ unit.get('sqm','') }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>MEA</label>
+                    <input type="text" name="mea" value="{{ unit.get('mea','') }}" placeholder="z.B. 521 / 10.000">
+                </div>
+                <div class="form-group">
+                    <label>PKW-Stellplatz</label>
+                    <input type="text" name="parking" value="{{ unit.get('parking','') }}" placeholder="z.B. incl. 15,-€">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Zustand</label>
+                    <select name="condition">
+                        {% for key, label in condition_labels.items() %}
+                        <option value="{{ key }}" {{ 'selected' if unit.get('condition') == key }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Vertragstyp</label>
+                    <select name="contract_type">
+                        {% for key, label in contract_types.items() %}
+                        <option value="{{ key }}" {{ 'selected' if unit.get('contract_type') == key }}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+
+            <!-- Ausstattung -->
+            <div class="form-group">
+                <label>Ausstattungsmerkmale</label>
+                <div class="features-grid">
+                    {% set feature_labels = {'balkon': 'Balkon', 'terrasse': 'Terrasse', 'garten': 'Garten', 'einbaukueche': 'Einbauküche', 'fussbodenheizung': 'Fußbodenheizung', 'aufzug': 'Aufzug', 'gaeste_wc': 'Gäste-WC', 'keller': 'Keller', 'parkett': 'Parkett', 'badewanne_und_dusche': 'Bad + Dusche', 'dachgeschoss': 'Dachgeschoss'} %}
+                    {% for key in features_list %}
+                    <label class="feature-tag">
+                        <input type="checkbox" name="features" value="{{ key }}" {{ 'checked' if key in (unit.get('features') or []) }}>
+                        <span class="feature-check"></span>
+                        {{ feature_labels.get(key, key) }}
+                    </label>
+                    {% endfor %}
+                </div>
+                <div class="hint">Beeinflusst die Marktmieten-Schätzung des Advisors</div>
+            </div>
+        </div>
+
+        <!-- Mieter & Miete -->
+        <div class="card">
+            <div class="section-label">Mieter & Miete</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mieter</label>
+                    <input type="text" name="tenant" value="{{ unit.get('tenant','') }}">
+                </div>
+                <div class="form-group">
+                    <label>Kaltmiete (€/Monat)</label>
+                    <input type="number" step="0.01" name="rent" value="{{ unit.get('rent','') }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Mieter-Qualität</label>
+                    <select name="tenant_quality">
+                        <option value="top" {{ 'selected' if unit.get('tenant_quality') == 'top' }}>Top-Mieter (zuverlässig, pflegend)</option>
+                        <option value="gut" {{ 'selected' if unit.get('tenant_quality') == 'gut' }}>Guter Mieter</option>
+                        <option value="normal" {{ 'selected' if unit.get('tenant_quality','normal') == 'normal' }}>Normal</option>
+                        <option value="schwierig" {{ 'selected' if unit.get('tenant_quality') == 'schwierig' }}>Schwieriger Mieter</option>
+                    </select>
+                    <div class="hint">Top-Mieter → moderatere Erhöhungsempfehlung (Fluktuation vermeiden)</div>
+                </div>
+                <div class="form-group">
+                    <label>Mieter-Notizen</label>
+                    <input type="text" name="tenant_notes" value="{{ unit.get('tenant_notes','') }}" placeholder="z.B. immer pünktlich, seit 5 Jahren">
+                </div>
+            </div>
+        </div>
+
+        <!-- Advisor-Kontext -->
+        <div class="card card-advisor">
+            <div class="section-label purple">🧠 Advisor-Kontext</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Marktmiete (€/m²) — manuell</label>
+                    <input type="number" step="0.01" name="market_rent_sqm" value="{{ unit.get('market_rent_sqm','') }}" placeholder="Leer = automatische Schätzung">
+                    <div class="hint">Mietspiegel-Wert oder eigene Recherche. Leer lassen für Auto-Schätzung.</div>
+                </div>
+                <div class="form-group">
+                    <label>Erhöhungs-Intervall (Monate)</label>
+                    <input type="number" name="custom_interval" value="{{ unit.get('custom_interval', 15) }}" min="1">
+                    <div class="hint">Standard: 15 (12 Monate Sperrfrist + 3 Vorlauf). Individuell anpassbar.</div>
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Besondere Regeln / Einschränkungen</label>
+                <textarea name="special_rules" placeholder="z.B. Modernisierungsumlage läuft noch bis 2027, Mietpreisbremse greift, Sozialbindung bis...">{{ unit.get('special_rules','') }}</textarea>
+                <div class="hint">Alles was der Advisor wissen sollte, um die beste Empfehlung zu geben</div>
+            </div>
+        </div>
+
+        <!-- Termine -->
+        <div class="card">
+            <div class="section-label">Termine</div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Letzte Mieterhöhung</label>
+                    <input type="date" name="last_increase" value="{{ unit.get('last_increase','') or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Neu vermietet seit</label>
+                    <input type="date" name="rented_since" value="{{ unit.get('rented_since','') or '' }}">
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group">
+                    <label>Geplante Erhöhung ab</label>
+                    <input type="date" name="increase_from" value="{{ unit.get('increase_from','') or '' }}">
+                </div>
+                <div class="form-group">
+                    <label>Erhöhungs-Notiz</label>
+                    <input type="text" name="increase_note" value="{{ unit.get('increase_note','') }}" placeholder="z.B. 535,-€ (5,29€/m²)">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>Allgemeine Notizen</label>
+                <textarea name="notes" placeholder="Weitere Informationen zur Wohnung...">{{ unit.get('notes','') }}</textarea>
+            </div>
+        </div>
+
+        <button type="submit" class="btn btn-primary">
+            {{ 'Speichern' if idx is not none else 'Wohnung hinzufügen' }}
+        </button>
+    </form>
+</div>
+</body>
+</html>

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portfolio-Advisor — MietCheck</title>
+    <style>
+        :root {
+            --bg: #0a0f1a; --surface: #111827; --surface2: #1a2332; --surface3: #1f2d40;
+            --border: #1e293b; --text: #e2e8f0; --text-muted: #94a3b8;
+            --accent: #38bd9c; --accent-dim: rgba(56,189,156,0.15);
+            --red: #ef4444; --red-dim: rgba(239,68,68,0.15);
+            --orange: #f97316; --orange-dim: rgba(249,115,22,0.15);
+            --yellow: #eab308; --yellow-dim: rgba(234,179,8,0.15);
+            --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.15);
+            --green: #22c55e; --green-dim: rgba(34,197,94,0.15);
+            --purple: #a855f7; --purple-dim: rgba(168,85,247,0.15);
+            --radius: 16px; --radius-sm: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 32px 40px; }
+        a { color: var(--accent); text-decoration: none; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+
+        .page-header { margin-bottom: 32px; }
+        .page-header h1 { font-size: 28px; font-weight: 700; display: flex; align-items: center; gap: 12px; }
+        .page-header h1 span { color: var(--accent); }
+        .page-header p { color: var(--text-muted); font-size: 14px; margin-top: 6px; }
+
+        .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 36px; }
+        .stat-card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; position: relative; overflow: hidden; }
+        .stat-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; }
+        .stat-card.accent::before { background: linear-gradient(90deg, var(--accent), var(--blue)); }
+        .stat-card.red::before { background: var(--red); }
+        .stat-card.green::before { background: var(--green); }
+        .stat-card.purple::before { background: var(--purple); }
+        .stat-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 8px; }
+        .stat-value { font-size: 32px; font-weight: 700; letter-spacing: -1px; }
+        .stat-card.accent .stat-value { color: var(--accent); }
+        .stat-card.red .stat-value { color: var(--red); }
+        .stat-card.green .stat-value { color: var(--green); }
+        .stat-card.purple .stat-value { color: var(--purple); }
+        .stat-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+
+        .rec-table { width: 100%; border-collapse: collapse; }
+        .rec-table thead th { padding: 14px 20px; text-align: left; font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); background: var(--surface2); border-bottom: 1px solid var(--border); }
+        .rec-table tbody td { padding: 16px 20px; font-size: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; }
+        .rec-table tbody tr { transition: background 0.15s; cursor: pointer; }
+        .rec-table tbody tr:hover { background: var(--surface2); }
+
+        .priority-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .priority-1 { background: var(--red-dim); color: var(--red); }
+        .priority-2 { background: var(--orange-dim); color: var(--orange); }
+        .priority-3 { background: var(--yellow-dim); color: var(--yellow); }
+        .priority-4 { background: var(--blue-dim); color: var(--blue); }
+        .priority-5 { background: var(--green-dim); color: var(--green); }
+
+        .badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 10px; border-radius: 16px; font-size: 12px; font-weight: 600; }
+        .badge-increase { background: var(--accent-dim); color: var(--accent); }
+        .badge-wait { background: var(--blue-dim); color: var(--blue); }
+        .badge-hold { background: rgba(156,163,175,0.15); color: #9ca3af; }
+        .badge-review { background: var(--yellow-dim); color: var(--yellow); }
+
+        .change-positive { color: var(--accent); font-weight: 600; }
+        .unit-name { font-weight: 600; }
+        .unit-sub { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+
+        .risk-low { color: var(--green); }
+        .risk-medium { color: var(--yellow); }
+        .risk-high { color: var(--orange); }
+
+        .timing-text { font-size: 13px; color: var(--text-muted); max-width: 200px; }
+
+        .disclaimer { margin-top: 32px; padding: 16px 20px; background: var(--surface2); border-radius: var(--radius-sm); font-size: 12px; color: var(--text-muted); line-height: 1.6; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard</a>
+
+    <div class="page-header">
+        <h1>🧠 Portfolio-<span>Advisor</span></h1>
+        <p>Intelligente Analyse aller Wohneinheiten — Stand {{ today }}</p>
+    </div>
+
+    <!-- Portfolio Stats -->
+    <div class="stats-grid">
+        <div class="stat-card accent">
+            <div class="stat-label">Monatl. Erhöhungspotenzial</div>
+            <div class="stat-value">+{{ "%.0f"|format(summary.total_potential_increase) }}€</div>
+            <div class="stat-sub">{{ "%.0f"|format(summary.annual_potential) }}€ / Jahr</div>
+        </div>
+        <div class="stat-card red">
+            <div class="stat-label">Sofort handeln</div>
+            <div class="stat-value">{{ summary.priority_1_count }}</div>
+            <div class="stat-sub">Priorität 1 — jetzt erhöhen</div>
+        </div>
+        <div class="stat-card green">
+            <div class="stat-label">Jetzt umsetzbar</div>
+            <div class="stat-value">{{ summary.actionable_now }}</div>
+            <div class="stat-sub">von {{ summary.total_units }} Einheiten</div>
+        </div>
+        <div class="stat-card purple">
+            <div class="stat-label">Gesamt-Kaltmiete</div>
+            <div class="stat-value">{{ "%.0f"|format(summary.total_current_rent) }}€</div>
+            <div class="stat-sub">aktuell / Monat</div>
+        </div>
+    </div>
+
+    <!-- Recommendations Table -->
+    <div class="card">
+        <table class="rec-table">
+            <thead>
+                <tr>
+                    <th>P</th>
+                    <th>Wohnung</th>
+                    <th>Aktion</th>
+                    <th>Aktuell</th>
+                    <th>Empfehlung</th>
+                    <th>+/Monat</th>
+                    <th>Risiko</th>
+                    <th>Timing</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for rec in summary.recommendations %}
+                {% set unit = rec.unit %}
+                <tr onclick="window.location='{{ url_for('unit_detail', idx=loop.index0) }}'">
+                    <td><span class="priority-badge priority-{{ rec.priority }}">P{{ rec.priority }}</span></td>
+                    <td>
+                        <div class="unit-name">{{ unit.address.split(' - ')[-1] if ' - ' in unit.get('address','') else unit.get('address','') }}</div>
+                        <div class="unit-sub">{{ unit.tenant or '—' }}</div>
+                    </td>
+                    <td><span class="badge badge-{{ rec.action }}">{{ rec.action | upper }}</span></td>
+                    <td>
+                        {{ "%.0f"|format(unit.rent or 0) }}€
+                        {% if unit.sqm %}<div class="unit-sub">{{ "%.2f"|format((unit.rent or 0) / unit.sqm) }}€/m²</div>{% endif %}
+                    </td>
+                    <td>
+                        {% if rec.recommended_rent and rec.action != 'hold' %}
+                        <strong>{{ "%.0f"|format(rec.recommended_rent) }}€</strong>
+                        <div class="unit-sub">{{ "%.2f"|format(rec.recommended_sqm) }}€/m²</div>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td>
+                        {% if rec.increase_amount and rec.increase_amount > 0 %}
+                        <span class="change-positive">+{{ "%.0f"|format(rec.increase_amount) }}€</span>
+                        <div class="unit-sub">+{{ "%.1f"|format(rec.increase_percent) }}%</div>
+                        {% else %}—{% endif %}
+                    </td>
+                    <td><span class="risk-{{ rec.risk_level }}">{{ rec.risk_level }}</span></td>
+                    <td><div class="timing-text">{{ rec.timing }}</div></td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div class="disclaimer">
+        <strong>Hinweis:</strong> Die Empfehlungen basieren auf geschätzten Marktmieten und gesetzlichen Rahmenbedingungen (§§ 558ff BGB). Für präzise Werte den lokalen Mietspiegel und ggf. Rechtsberatung heranziehen. Marktmieten können durch manuelle Eingabe pro Wohnung überschrieben werden.
+    </div>
+</div>
+</body>
+</html>

@@ -1,0 +1,20 @@
+version: "3.8"
+
+services:
+  mietcheck:
+    build: .
+    container_name: mietcheck
+    restart: unless-stopped
+    ports:
+      - "5050:5050"
+    volumes:
+      - mietcheck-data:/data
+    environment:
+      - SECRET_KEY=${SECRET_KEY:-mietcheck-prod-key-2026}
+      - ADMIN_USER=${ADMIN_USER:-admin}
+      - ADMIN_PASS=${ADMIN_PASS:-mietcheck2026}
+      - DATA_DIR=/data
+      - PORT=5050
+
+volumes:
+  mietcheck-data:

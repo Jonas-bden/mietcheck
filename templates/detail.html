@@ -1,0 +1,339 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ unit.address.split(' - ')[-1] if ' - ' in unit.get('address','') else unit.get('address','Wohnung') }} — MietCheck</title>
+    <style>
+        :root {
+            --bg: #0a0f1a; --surface: #111827; --surface2: #1a2332; --surface3: #1f2d40;
+            --border: #1e293b; --text: #e2e8f0; --text-muted: #94a3b8;
+            --accent: #38bd9c; --accent-dim: rgba(56,189,156,0.15);
+            --red: #ef4444; --red-dim: rgba(239,68,68,0.15);
+            --orange: #f97316; --orange-dim: rgba(249,115,22,0.15);
+            --yellow: #eab308; --yellow-dim: rgba(234,179,8,0.15);
+            --blue: #3b82f6; --blue-dim: rgba(59,130,246,0.15);
+            --green: #22c55e; --green-dim: rgba(34,197,94,0.15);
+            --purple: #a855f7; --purple-dim: rgba(168,85,247,0.15);
+            --radius: 16px; --radius-sm: 10px;
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', system-ui, sans-serif; background: var(--bg); color: var(--text); -webkit-font-smoothing: antialiased; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 32px 40px; }
+        a { color: var(--accent); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+        .back-link { display: inline-flex; align-items: center; gap: 6px; color: var(--text-muted); font-size: 14px; margin-bottom: 24px; }
+        .back-link:hover { color: var(--accent); text-decoration: none; }
+
+        .detail-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 28px; }
+        .detail-header h1 { font-size: 26px; font-weight: 700; letter-spacing: -0.5px; }
+        .detail-header .subtitle { color: var(--text-muted); font-size: 14px; margin-top: 4px; }
+
+        .badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: 600; }
+        .badge .dot { width: 8px; height: 8px; border-radius: 50%; }
+        .badge-red { background: var(--red-dim); color: var(--red); }
+        .badge-red .dot { background: var(--red); animation: pulse 1.5s infinite; }
+        .badge-orange { background: var(--orange-dim); color: var(--orange); }
+        .badge-orange .dot { background: var(--orange); }
+        .badge-yellow { background: var(--yellow-dim); color: var(--yellow); }
+        .badge-yellow .dot { background: var(--yellow); }
+        .badge-blue { background: var(--blue-dim); color: var(--blue); }
+        .badge-blue .dot { background: var(--blue); }
+        .badge-green { background: var(--green-dim); color: var(--green); }
+        .badge-green .dot { background: var(--green); }
+        .badge-gray { background: rgba(156,163,175,0.15); color: #9ca3af; }
+        .badge-purple { background: var(--purple-dim); color: var(--purple); }
+        @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(1.3)} }
+
+        .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 28px; }
+        .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px; }
+
+        .card { background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px; }
+        .card-accent { border-color: var(--accent); border-width: 1px; position: relative; }
+        .card-accent::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--accent); border-radius: var(--radius) var(--radius) 0 0; }
+
+        .info-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .info-value { font-size: 22px; font-weight: 700; }
+        .info-sub { font-size: 13px; color: var(--text-muted); margin-top: 2px; }
+
+        .section { margin-bottom: 28px; }
+        .section-title { font-size: 18px; font-weight: 600; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+
+        /* ─── Advisor Panel ─── */
+        .advisor-panel { position: relative; overflow: hidden; }
+        .advisor-panel::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: linear-gradient(90deg, var(--accent), var(--purple), var(--blue)); border-radius: var(--radius) var(--radius) 0 0; }
+        .advisor-header { display: flex; align-items: center; gap: 10px; margin-bottom: 20px; }
+        .advisor-icon { width: 36px; height: 36px; border-radius: 10px; background: linear-gradient(135deg, var(--accent), var(--blue)); display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .advisor-header h3 { font-size: 16px; font-weight: 600; }
+        .advisor-header .advisor-tag { font-size: 11px; padding: 3px 8px; border-radius: 12px; background: var(--purple-dim); color: var(--purple); font-weight: 600; }
+
+        .rec-card { background: var(--surface2); border-radius: var(--radius-sm); padding: 16px 20px; margin-bottom: 12px; }
+        .rec-row { display: flex; justify-content: space-between; align-items: center; }
+        .rec-label { font-size: 13px; color: var(--text-muted); }
+        .rec-value { font-size: 15px; font-weight: 600; }
+        .rec-value.accent { color: var(--accent); }
+        .rec-value.warn { color: var(--orange); }
+
+        .rec-reasoning { font-size: 13px; line-height: 1.6; color: var(--text-muted); white-space: pre-line; background: var(--surface2); border-radius: var(--radius-sm); padding: 14px 18px; margin-top: 12px; }
+
+        .priority-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 700; }
+        .priority-1 { background: var(--red-dim); color: var(--red); }
+        .priority-2 { background: var(--orange-dim); color: var(--orange); }
+        .priority-3 { background: var(--yellow-dim); color: var(--yellow); }
+        .priority-4 { background: var(--blue-dim); color: var(--blue); }
+        .priority-5 { background: var(--green-dim); color: var(--green); }
+
+        /* ─── Market Gauge ─── */
+        .gauge-container { margin: 20px 0; }
+        .gauge-bar { height: 8px; background: var(--surface3); border-radius: 4px; position: relative; overflow: visible; margin: 8px 0; }
+        .gauge-fill { height: 100%; border-radius: 4px; transition: width 0.5s; }
+        .gauge-marker { position: absolute; top: -6px; width: 3px; height: 20px; background: var(--text); border-radius: 2px; transform: translateX(-50%); }
+        .gauge-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--text-muted); }
+
+        /* ─── Risk Badge ─── */
+        .risk-low { color: var(--green); }
+        .risk-medium { color: var(--yellow); }
+        .risk-high { color: var(--orange); }
+
+        .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 12px 20px; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; text-decoration: none; border: none; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .btn:hover { text-decoration: none; }
+        .btn-primary { background: var(--accent); color: #0a0f1a; }
+        .btn-primary:hover { filter: brightness(1.1); }
+        .btn-ghost { background: var(--surface2); color: var(--text); border: 1px solid var(--border); }
+        .btn-ghost:hover { border-color: var(--accent); }
+        .btn-danger { background: var(--red-dim); color: var(--red); border: 1px solid transparent; }
+
+        .action-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 28px; }
+
+        .form-row { display: flex; gap: 12px; margin-bottom: 12px; }
+        .form-group { flex: 1; }
+        .form-group label { display: block; font-size: 13px; color: var(--text-muted); margin-bottom: 6px; }
+        .form-group input, .form-group textarea { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--border); background: var(--surface2); color: var(--text); font-size: 14px; font-family: inherit; }
+        .form-group input:focus { outline: none; border-color: var(--accent); }
+
+        .meta-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .meta-item { padding: 12px 0; border-bottom: 1px solid var(--border); }
+        .meta-item:last-child { border-bottom: none; }
+        .meta-key { font-size: 13px; color: var(--text-muted); }
+        .meta-val { font-weight: 500; margin-top: 2px; }
+
+        .history-item { display: flex; justify-content: space-between; align-items: center; padding: 14px 0; border-bottom: 1px solid var(--border); }
+        .history-item:last-child { border-bottom: none; }
+        .history-date { font-size: 13px; color: var(--text-muted); }
+        .history-change { font-weight: 600; }
+        .history-arrow { color: var(--accent); margin: 0 8px; }
+
+        .flash { padding: 12px 20px; border-radius: var(--radius-sm); margin-bottom: 16px; font-size: 14px; font-weight: 500; }
+        .flash-success { background: var(--green-dim); color: var(--green); }
+        .flash-info { background: var(--blue-dim); color: var(--blue); }
+    </style>
+</head>
+<body>
+<div class="container">
+    {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}{% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}{% endif %}{% endwith %}
+
+    <a href="{{ url_for('dashboard') }}" class="back-link">← Dashboard</a>
+
+    <div class="detail-header">
+        <div>
+            <h1>{{ unit.address.split(' - ')[-1] if ' - ' in unit.get('address','') else unit.get('address','') }}</h1>
+            <div class="subtitle">{{ unit.address.split(' - ')[0] if ' - ' in unit.get('address','') else '' }}
+                {% if unit.contract_type and unit.contract_type != 'standard' %}
+                · {{ contract_types.get(unit.contract_type, unit.contract_type) }}
+                {% endif %}
+            </div>
+        </div>
+        <span class="badge badge-{{ unit.calc.status_color }}">
+            <span class="dot"></span>{{ unit.calc.status }}
+        </span>
+    </div>
+
+    <!-- ═══ ADVISOR PANEL ═══ -->
+    <div class="section">
+        <div class="card advisor-panel">
+            <div class="advisor-header">
+                <div class="advisor-icon">🧠</div>
+                <div>
+                    <h3>Advisor-Empfehlung</h3>
+                </div>
+                <span class="priority-badge priority-{{ rec.priority }}">
+                    P{{ rec.priority }} · {{ rec.timing }}
+                </span>
+            </div>
+
+            {% if rec.action == 'increase' or rec.action == 'wait' %}
+            <div class="grid-3" style="margin-bottom: 16px;">
+                <div class="rec-card">
+                    <div class="rec-label">Empfohlene neue Miete</div>
+                    <div class="rec-value accent" style="font-size: 24px;">{{ "%.0f"|format(rec.recommended_rent) }}€</div>
+                    <div class="rec-label" style="margin-top: 4px;">{{ "%.2f"|format(rec.recommended_sqm) }}€/m²</div>
+                </div>
+                <div class="rec-card">
+                    <div class="rec-label">Erhöhung</div>
+                    <div class="rec-value" style="font-size: 24px;">+{{ "%.0f"|format(rec.increase_amount or 0) }}€</div>
+                    <div class="rec-label" style="margin-top: 4px;">+{{ "%.1f"|format(rec.increase_percent or 0) }}% · Risiko: <span class="risk-{{ rec.risk_level }}">{{ rec.risk_level }}</span></div>
+                </div>
+                <div class="rec-card">
+                    <div class="rec-label">Jährliches Mehreinnahmen</div>
+                    <div class="rec-value accent" style="font-size: 24px;">+{{ "%.0f"|format(rec.potential_annual or 0) }}€</div>
+                    <div class="rec-label" style="margin-top: 4px;">pro Jahr zusätzlich</div>
+                </div>
+            </div>
+
+            <!-- Marktpreis-Gauge -->
+            <div class="gauge-container">
+                <div class="rec-label">Miete im Marktvergleich</div>
+                {% set current_pct = ((unit.rent or 0) / (rec.market_total or 1) * 100) | int %}
+                {% set current_pct_clamped = [current_pct, 100] | min %}
+                <div class="gauge-bar">
+                    <div class="gauge-fill" style="width: {{ current_pct_clamped }}%; background: {% if current_pct < 70 %}var(--red){% elif current_pct < 85 %}var(--orange){% elif current_pct < 95 %}var(--yellow){% else %}var(--green){% endif %};"></div>
+                    {% if rec.recommended_rent and rec.market_total %}
+                    <div class="gauge-marker" style="left: {{ ((rec.recommended_rent / rec.market_total) * 100) | int }}%;" title="Empfehlung: {{ rec.recommended_rent }}€"></div>
+                    {% endif %}
+                </div>
+                <div class="gauge-labels">
+                    <span>Aktuell: {{ "%.0f"|format(unit.rent or 0) }}€ ({{ current_pct }}%)</span>
+                    <span>▲ Empfehlung</span>
+                    <span>Markt: {{ "%.0f"|format(rec.market_total or 0) }}€ ({{ "%.2f"|format(rec.market_sqm or 0) }}€/m²)</span>
+                </div>
+            </div>
+
+            {% else %}
+            <div class="rec-card">
+                <div class="rec-value">{{ rec.reasoning }}</div>
+            </div>
+            {% endif %}
+
+            <div class="rec-reasoning">{{ rec.reasoning }}</div>
+
+            {% if legal.type == 'standard' and legal.kappung %}
+            <div style="margin-top: 12px; padding: 12px 16px; background: var(--surface3); border-radius: 8px; font-size: 13px;">
+                <strong>Rechtlicher Rahmen:</strong>
+                Kappungsgrenze {{ legal.kappung.cap_percent }}% in 3 Jahren
+                {% if legal.kappung.is_tight_market %}(angespannter Markt){% endif %}
+                · Max. Miete: {{ "%.0f"|format(legal.legal_max or 0) }}€
+                · Bindendes Limit: {{ "Mietspiegel" if legal.binding_limit == "mietspiegel" else "Kappungsgrenze" }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Key Info Cards -->
+    <div class="grid-3">
+        <div class="card">
+            <div class="info-label">Kaltmiete</div>
+            <div class="info-value">{{ "%.0f"|format(unit.rent or 0) }}€</div>
+            {% if unit.sqm %}<div class="info-sub">{{ "%.2f"|format((unit.rent or 0) / unit.sqm) }}€/m² · {{ unit.sqm }}m²</div>{% endif %}
+        </div>
+        <div class="card">
+            <div class="info-label">Marktmiete (geschätzt)</div>
+            <div class="info-value" style="color: var(--accent);">{{ "%.2f"|format(market_sqm) }}€/m²</div>
+            <div class="info-sub">= {{ "%.0f"|format(market_sqm * (unit.sqm or 0)) }}€/Monat · {% if unit.market_rent_sqm %}manuell{% else %}auto-geschätzt{% endif %}</div>
+        </div>
+        <div class="card">
+            <div class="info-label">Nächste Erhöhung möglich</div>
+            <div class="info-value" style="font-size: 18px;">{{ unit.calc.get('next_possible_formatted', '—') }}</div>
+            {% if unit.calc.days_until is not none %}
+            <div class="info-sub">
+                {% if unit.calc.days_until < 0 %}{{ (-unit.calc.days_until) }} Tage überfällig
+                {% elif unit.calc.days_until == 0 %}Heute!
+                {% else %}in {{ unit.calc.days_until }} Tagen{% endif %}
+                · Intervall: {{ unit.custom_interval or 15 }} Monate
+            </div>
+            {% endif %}
+        </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="action-grid">
+        <a href="{{ url_for('unit_edit', idx=idx) }}" class="btn btn-ghost">✏️ Bearbeiten & Kontext anpassen</a>
+        <button class="btn btn-primary" onclick="document.getElementById('increase-section').style.display='block'; this.style.display='none';">
+            📈 Mieterhöhung eintragen
+        </button>
+    </div>
+
+    <!-- Increase Form -->
+    <div id="increase-section" class="section" style="display: none;">
+        <div class="card card-accent">
+            <h3 style="margin-bottom: 16px;">Mieterhöhung eintragen</h3>
+            {% if rec.action == 'increase' %}
+            <div style="background: var(--accent-dim); padding: 10px 16px; border-radius: 8px; font-size: 13px; margin-bottom: 16px;">
+                💡 Advisor-Empfehlung: <strong>{{ "%.0f"|format(rec.recommended_rent) }}€</strong> ({{ "%.2f"|format(rec.recommended_sqm) }}€/m²)
+            </div>
+            {% endif %}
+            <form method="POST" action="{{ url_for('record_increase', idx=idx) }}">
+                <div class="form-row">
+                    <div class="form-group">
+                        <label>Neue Kaltmiete (€)</label>
+                        <input type="number" step="0.01" name="new_rent" value="{{ rec.recommended_rent if rec.action == 'increase' else unit.rent }}" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Gültig ab</label>
+                        <input type="date" name="increase_date" required>
+                    </div>
+                </div>
+                <div class="form-group" style="margin-bottom: 16px;">
+                    <label>Notiz</label>
+                    <input type="text" name="note" placeholder="z.B. Anpassung an Mietspiegel">
+                </div>
+                <div style="display: flex; gap: 12px;">
+                    <button type="submit" class="btn btn-primary" style="flex: 1;">Speichern</button>
+                    <button type="button" class="btn btn-ghost" style="flex: 0; width: auto; padding: 12px 20px;" onclick="document.getElementById('increase-section').style.display='none';">Abbrechen</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Details -->
+    <div class="section">
+        <h3 class="section-title">📋 Details</h3>
+        <div class="card">
+            <div class="meta-grid">
+                <div class="meta-item"><div class="meta-key">Mieter</div><div class="meta-val">{{ unit.tenant or '—' }}{% if unit.tenant_quality %} · <span class="badge badge-{% if unit.tenant_quality == 'top' %}green{% elif unit.tenant_quality == 'gut' %}blue{% elif unit.tenant_quality == 'schwierig' %}orange{% else %}gray{% endif %}" style="font-size:11px;padding:2px 8px;">{{ unit.tenant_quality }}</span>{% endif %}</div></div>
+                <div class="meta-item"><div class="meta-key">Vertragstyp</div><div class="meta-val">{{ contract_types.get(unit.contract_type or 'standard', 'Standard') }}</div></div>
+                <div class="meta-item"><div class="meta-key">Zustand</div><div class="meta-val">{{ condition_labels.get(unit.condition or 'normal', 'Normal') }}</div></div>
+                <div class="meta-item"><div class="meta-key">Baujahr / Sanierung</div><div class="meta-val">{{ unit.year or '—' }}{% if unit.renovation_year %} · saniert {{ unit.renovation_year }}{% endif %}</div></div>
+                <div class="meta-item"><div class="meta-key">Erhöhungs-Intervall</div><div class="meta-val">{{ unit.custom_interval or 15 }} Monate</div></div>
+                <div class="meta-item"><div class="meta-key">Letzte Erhöhung</div><div class="meta-val">{{ unit.last_increase or '—' }}</div></div>
+                <div class="meta-item"><div class="meta-key">Neu vermietet seit</div><div class="meta-val">{{ unit.rented_since or '—' }}</div></div>
+                <div class="meta-item"><div class="meta-key">PKW-Stellplatz</div><div class="meta-val">{{ unit.parking or '—' }}</div></div>
+                {% if unit.special_rules %}
+                <div class="meta-item" style="grid-column: span 2;"><div class="meta-key">Besondere Regeln</div><div class="meta-val">{{ unit.special_rules }}</div></div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <!-- History -->
+    {% if history %}
+    <div class="section">
+        <h3 class="section-title">📈 Erhöhungs-Historie</h3>
+        <div class="card">
+            {% for h in history|reverse %}
+            <div class="history-item">
+                <div>
+                    <span class="history-date">{{ h.date }}</span>
+                    {% if h.note %}<span style="color: var(--text-muted); font-size: 13px;"> · {{ h.note }}</span>{% endif %}
+                </div>
+                <div>
+                    <span class="history-change">{{ "%.0f"|format(h.old_rent) }}€</span>
+                    <span class="history-arrow">→</span>
+                    <span class="history-change" style="color: var(--accent);">{{ "%.0f"|format(h.new_rent) }}€</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    {% endif %}
+
+    <div style="margin-top: 40px; text-align: center;">
+        <form method="POST" action="{{ url_for('delete_unit', idx=idx) }}" onsubmit="return confirm('Wohnung wirklich löschen?');">
+            <button type="submit" class="btn btn-danger" style="width: auto;">Wohnung löschen</button>
+        </form>
+    </div>
+</div>
+</body>
+</html>
