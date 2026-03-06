@@ -58,6 +58,18 @@ def logout():
 
 # ─── Data ───
 
+def _seed_data():
+    """Kopiert mitgelieferte data.json ins DATA_DIR wenn noch keine vorhanden."""
+    if not os.path.exists(DATA_FILE):
+        bundled = os.path.join(os.path.dirname(os.path.abspath(__file__)), "data.json")
+        if os.path.exists(bundled) and bundled != DATA_FILE:
+            os.makedirs(os.path.dirname(DATA_FILE) or ".", exist_ok=True)
+            import shutil
+            shutil.copy2(bundled, DATA_FILE)
+
+_seed_data()
+
+
 def load_data():
     if os.path.exists(DATA_FILE):
         with open(DATA_FILE, "r") as f:
